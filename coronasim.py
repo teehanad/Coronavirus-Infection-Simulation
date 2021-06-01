@@ -2,7 +2,7 @@ from hashlib import new
 import os
 from warnings import showwarning
 os.environ['PYGAME_HIDE_SUPPORT_PROMPT'] = "hide"
-from math import inf
+from math import e, inf
 import pygame
 import random
 from pygame.math import Vector2
@@ -10,6 +10,9 @@ import time
 import math
 from termcolor import colored
 import pandas as pd
+from datetime import datetime
+from tqdm import tqdm
+
 
 
 print(colored('Blue', 'blue')+' squares are inital infected: These can infect others')
@@ -71,13 +74,19 @@ class Background(pygame.sprite.Sprite):
 
 
 class Person(pygame.sprite.Sprite):
-    def __init__(self, infected, selected_shop, shops):
+    def __init__(self, infected, selected_shop, shops, id):
         pygame.sprite.Sprite.__init__(self)
         self.image = pygame.Surface((SIZE, SIZE))
         self.rect = self.image.get_rect()
 
+        self.id = id
+
         self.shop_duration = random.randint(MIN_TIME_IN_SHOP, MAX_TIME_IN_SHOP)
+
         self.start_time = time.time()
+        self.infection_time = "N/A"
+        self.dt_string = 'N/A'
+
 
 
         self.selected_shop = selected_shop
@@ -224,6 +233,10 @@ def check_infection(left, right):
                     right.infected = True
                     if right.original_infected != True:
                         right.image.fill(RED)
+                        right.infection_time = time.time()
+                        right_now = datetime.now()
+                        right.dt_string = right_now.strftime("%d/%m/%Y %H:%M:%S")
+
 
         distance = Vector2(right.rect.center).distance_to(left.rect.center)
         if distance < left.radius+50:
@@ -232,6 +245,10 @@ def check_infection(left, right):
                     left.infected = True
                     if left.original_infected != True:
                         left.image.fill(RED)
+                        left.infection_time = time.time()
+                        right_now = datetime.now()
+                        left.dt_string = right_now.strftime("%d/%m/%Y %H:%M:%S")
+
 
         return True
     else:
@@ -240,8 +257,9 @@ def check_infection(left, right):
     
 def main():
     run_count = 0
-    first_write = True
-    while run_count < HOW_MANY_RUNS:
+    first_write_general = True
+    first_write_person = True
+    for run_count in tqdm(range(0, HOW_MANY_RUNS)):
         pygame.init()
         pygame.mixer.init()
 
@@ -295,17 +313,19 @@ def main():
         for n in range(0, NUMBER_PERSONS):
             selected_shop = random.choice(shops)
             if infected_count != NUMBER_INFECTED_PERSONS:
-                person = Person(True, selected_shop, shops)
+                person = Person(True, selected_shop, shops, n)
                 all_people.add(person)
                 infected_count += 1
             else:
-                person = Person(False, selected_shop, shops)
+                person = Person(False, selected_shop, shops,n)
                 all_people.add(person)
         
 
         # Game loop
         end_simulation = False
         start_time = time.time()
+        now = datetime.now()               
+        start_datetime = now.strftime("%d/%m/%Y %H:%M:%S")
         while time.time() < start_time+(60*MINUTES) and end_simulation != True:
             clock.tick(FPS)
             for event in pygame.event.get():
@@ -327,6 +347,8 @@ def main():
 
 
         end_time = time.time()
+        now = datetime.now()               
+        end_datetime = now.strftime("%d/%m/%Y %H:%M:%S")
         elapsed_time = (end_time - start_time)
         final_infected = 0
         for sprite in all_people:
@@ -334,15 +356,31 @@ def main():
                 final_infected += 1
 
 
-        run_count += 1    
-        print('There were '+str(final_infected-NUMBER_INFECTED_PERSONS)+ ' new infections for '+str(NUMBER_INFECTED_PERSONS)+' initial infected people in a total of '+str(NUMBER_PERSONS)+ ' people over '+str(round((elapsed_time/60),2)) +' minutes')
+        # print('There were '+str(final_infected-NUMBER_INFECTED_PERSONS)+ ' new infections for '+str(NUMBER_INFECTED_PERSONS)+' initial infected people in a total of '+str(NUMBER_PERSONS)+ ' people over '+str(round((elapsed_time/60),2)) +' minutes')
         data = [[final_infected-NUMBER_INFECTED_PERSONS, NUMBER_INFECTED_PERSONS, NUMBER_PERSONS, round((elapsed_time/60),2)]]
         df = pd.DataFrame(data, columns = ['Number of New Infected', 'Number of original infected', 'Total number of people', 'Time elapsed'])
-        if first_write:
-            df.to_csv('data.csv')
-            first_write = False
+        if first_write_general:
+            df.to_csv('general_data.csv')
+            first_write_general = False
         else:
-            df.to_csv('data.csv', mode='a', header=False)
+            df.to_csv('general_data.csv', mode='a', header=False)
+
+        timestamp_list = []
+        for person in all_people:
+            if person.infection_time == 'N/A':
+                timestamp_list.append([run_count, person.id, person.infection_time, start_datetime, person.dt_string, end_datetime])
+            else:
+                elapsed = person.infection_time-start_time
+                timestamp_list.append([run_count, person.id, round((elapsed/60),2), start_datetime, person.dt_string, end_datetime])
+
+
+        df = pd.DataFrame(timestamp_list, columns = ['Run ID', 'Person ID', 'Time of Infection (Mins)', 'Datetime of Sim Start', 'Datetime of When Infected', 'Datetime if Sim End'])
+        if first_write_person:
+            df.to_csv('person_data.csv')
+            first_write_person = False
+        else:
+            df.to_csv('person_data.csv', mode='a', header=False)
+
 
         pygame.quit()
 
