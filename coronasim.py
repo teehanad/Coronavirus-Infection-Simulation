@@ -9,6 +9,7 @@ from pygame.math import Vector2
 import time
 import math
 from termcolor import colored
+import pandas as pd
 
 
 print(colored('Blue', 'blue')+' squares are inital infected: These can infect others')
@@ -29,13 +30,16 @@ MIN_STEPS = 10
 MAX_STEPS = 50
 MIN_THRESHOLD = 0
 MAX_THRESHOLD = 100
-INFECTION_DISTANCE = 50
+INFECTION_DISTANCE = 7
 NUMBER_PERSONS = int(input("How many people in the shop?: "))
 NUMBER_INFECTED_PERSONS = int(input("How many infected people in the shop?: "))
 MINUTES = int(input("How many minutes should the simulation run for?: "))
+HOW_MANY_RUNS = int(input("How many runs should the simulation run for?: "))
 MAX_TIME_IN_SHOP = 10
 MIN_TIME_IN_SHOP = 2
 SHOP_SIZE=HEIGHT/5
+
+
 RELATIONSHIP_MATRIX= {
     1: [1,0,0,0,0,0,0,0,0,0],
     2: [0,1,0.34,0.35,0,0,0,0,0,0],
@@ -50,7 +54,6 @@ RELATIONSHIP_MATRIX= {
     }
 
 
-
 # define colors
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -61,7 +64,7 @@ BLUE = (0, 0, 255)
 
 class Background(pygame.sprite.Sprite):
     def __init__(self, image_file, location):
-        pygame.sprite.Sprite.__init__(self)  #call Sprite initializer
+        pygame.sprite.Sprite.__init__(self)  
         self.image = pygame.image.load(image_file)
         self.rect = self.image.get_rect()
         self.rect.left, self.rect.top = location
@@ -236,106 +239,112 @@ def check_infection(left, right):
 
     
 def main():
-    pygame.init()
-    pygame.mixer.init()
+    run_count = 0
+    first_write = True
+    while run_count < HOW_MANY_RUNS:
+        pygame.init()
+        pygame.mixer.init()
 
-    # BackGround = Background('Images/shops.png', [0,0])
-    screen = pygame.display.set_mode((WIDTH, HEIGHT))
-    pygame.display.set_caption("Coronavirus Infection Simulation")
-    clock = pygame.time.Clock()
-    all_people = pygame.sprite.Group()
-    all_shops = pygame.sprite.Group()
+        # BackGround = Background('Images/shops.png', [0,0])
+        screen = pygame.display.set_mode((WIDTH, HEIGHT))
+        pygame.display.set_caption("Coronavirus Infection Simulation")
+        clock = pygame.time.Clock()
+        all_people = pygame.sprite.Group()
+        all_shops = pygame.sprite.Group()
 
-    shops = []
+        shops = []
 
 
-    #Left Side
-    optician = Shop(screen, BLACK, 'Optician', 0, SHOP_SIZE*4, SHOP_SIZE, SHOP_SIZE, 1)
-    shops.append(optician)
+        #Left Side
+        optician = Shop(screen, BLACK, 'Optician', 0, SHOP_SIZE*4, SHOP_SIZE, SHOP_SIZE, 1)
+        shops.append(optician)
 
-    sports_outlet = Shop(screen, BLACK, 'Sports Outlet', 0, SHOP_SIZE*3, SHOP_SIZE, SHOP_SIZE, 2)
-    shops.append(sports_outlet)
+        sports_outlet = Shop(screen, BLACK, 'Sports Outlet', 0, SHOP_SIZE*3, SHOP_SIZE, SHOP_SIZE, 2)
+        shops.append(sports_outlet)
 
-    clothing_store = Shop(screen, BLACK, 'Clothing Store', 0, SHOP_SIZE*2, SHOP_SIZE, SHOP_SIZE, 3)
-    shops.append(clothing_store)
+        clothing_store = Shop(screen, BLACK, 'Clothing Store', 0, SHOP_SIZE*2, SHOP_SIZE, SHOP_SIZE, 3)
+        shops.append(clothing_store)
 
-    shoe_shop = Shop(screen, BLACK, 'Shoe Shop', 0, SHOP_SIZE, SHOP_SIZE, SHOP_SIZE, 4)
-    shops.append(shoe_shop)
+        shoe_shop = Shop(screen, BLACK, 'Shoe Shop', 0, SHOP_SIZE, SHOP_SIZE, SHOP_SIZE, 4)
+        shops.append(shoe_shop)
 
-    #Top
-    Supermarket = Shop(screen, BLACK, 'Supermarket', 0, 0, WIDTH, SHOP_SIZE, 5)
-    shops.append(Supermarket)
+        #Top
+        Supermarket = Shop(screen, BLACK, 'Supermarket', 0, 0, WIDTH, SHOP_SIZE, 5)
+        shops.append(Supermarket)
 
-    #Right Side
-    bakery = Shop(screen, BLACK, 'Bakery', WIDTH-SHOP_SIZE, SHOP_SIZE, SHOP_SIZE, SHOP_SIZE, 6)
-    shops.append(bakery)
+        #Right Side
+        bakery = Shop(screen, BLACK, 'Bakery', WIDTH-SHOP_SIZE, SHOP_SIZE, SHOP_SIZE, SHOP_SIZE, 6)
+        shops.append(bakery)
 
-    salon = Shop(screen, BLACK, 'Salon', WIDTH-SHOP_SIZE, SHOP_SIZE*2, SHOP_SIZE, SHOP_SIZE, 7)
-    shops.append(salon)
+        salon = Shop(screen, BLACK, 'Salon', WIDTH-SHOP_SIZE, SHOP_SIZE*2, SHOP_SIZE, SHOP_SIZE, 7)
+        shops.append(salon)
 
-    toys = Shop(screen, BLACK, 'Toys & Gifts', WIDTH-SHOP_SIZE, SHOP_SIZE*3, SHOP_SIZE, SHOP_SIZE, 8)
-    shops.append(toys)
+        toys = Shop(screen, BLACK, 'Toys & Gifts', WIDTH-SHOP_SIZE, SHOP_SIZE*3, SHOP_SIZE, SHOP_SIZE, 8)
+        shops.append(toys)
 
-    pharmacy = Shop(screen, BLACK, 'Pharmacy', WIDTH-SHOP_SIZE, SHOP_SIZE*4, SHOP_SIZE, SHOP_SIZE, 9)
-    shops.append(pharmacy)
+        pharmacy = Shop(screen, BLACK, 'Pharmacy', WIDTH-SHOP_SIZE, SHOP_SIZE*4, SHOP_SIZE, SHOP_SIZE, 9)
+        shops.append(pharmacy)
 
-    #Mid
-    cafe = Shop(screen, BLACK, 'Cafe', (WIDTH/2)-(SHOP_SIZE/2), (HEIGHT/2), SHOP_SIZE, SHOP_SIZE, 10)
-    shops.append(cafe)
+        #Mid
+        cafe = Shop(screen, BLACK, 'Cafe', (WIDTH/2)-(SHOP_SIZE/2), (HEIGHT/2), SHOP_SIZE, SHOP_SIZE, 10)
+        shops.append(cafe)
 
-    exit = Shop
+        exit = Shop
 
-    infected_count = 0
-    for n in range(0, NUMBER_PERSONS):
-        selected_shop = random.choice(shops)
-        if infected_count != NUMBER_INFECTED_PERSONS:
-            person = Person(True, selected_shop, shops)
-            all_people.add(person)
-            infected_count += 1
+        infected_count = 0
+        for n in range(0, NUMBER_PERSONS):
+            selected_shop = random.choice(shops)
+            if infected_count != NUMBER_INFECTED_PERSONS:
+                person = Person(True, selected_shop, shops)
+                all_people.add(person)
+                infected_count += 1
+            else:
+                person = Person(False, selected_shop, shops)
+                all_people.add(person)
+        
+
+        # Game loop
+        end_simulation = False
+        start_time = time.time()
+        while time.time() < start_time+(60*MINUTES) and end_simulation != True:
+            clock.tick(FPS)
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    end_simulation = True
+
+            # Update
+            all_people.update()
+            collided_sprites = pygame.sprite.groupcollide(all_people, all_people, False, False,collided=check_infection)
+
+            screen.fill(WHITE)
+            # screen.blit(BackGround.image, BackGround.rect)
+            for shop in shops:
+                shop.drawself()
+            all_people.draw(screen)
+            # for collided_sprite in collided_sprites:
+            #     collided_sprite
+            pygame.display.flip()
+
+
+        end_time = time.time()
+        elapsed_time = (end_time - start_time)
+        final_infected = 0
+        for sprite in all_people:
+            if sprite.infected == True:
+                final_infected += 1
+
+
+        run_count += 1    
+        print('There were '+str(final_infected-NUMBER_INFECTED_PERSONS)+ ' new infections for '+str(NUMBER_INFECTED_PERSONS)+' initial infected people in a total of '+str(NUMBER_PERSONS)+ ' people over '+str(round((elapsed_time/60),2)) +' minutes')
+        data = [[final_infected-NUMBER_INFECTED_PERSONS, NUMBER_INFECTED_PERSONS, NUMBER_PERSONS, round((elapsed_time/60),2)]]
+        df = pd.DataFrame(data, columns = ['Number of New Infected', 'Number of original infected', 'Total number of people', 'Time elapsed'])
+        if first_write:
+            df.to_csv('data.csv')
+            first_write = False
         else:
-            person = Person(False, selected_shop, shops)
-            all_people.add(person)
-    
+            df.to_csv('data.csv', mode='a', header=False)
 
-    # Game loop
-    end_simulation = False
-    start_time = time.time()
-    while time.time() < start_time+(60*MINUTES) and end_simulation != True:
-        # keep loop running at the right speed
-        clock.tick(FPS)
-        # Process input (events)
-        for event in pygame.event.get():
-            # check for closing window
-            if event.type == pygame.QUIT:
-                end_simulation = True
-
-        # Update
-        all_people.update()
-        collided_sprites = pygame.sprite.groupcollide(all_people, all_people, False, False,collided=check_infection)
-
-        # Draw / render
-        screen.fill(WHITE)
-        # screen.blit(BackGround.image, BackGround.rect)
-        for shop in shops:
-            shop.drawself()
-        all_people.draw(screen)
-        # for collided_sprite in collided_sprites:
-        #     collided_sprite
-        pygame.display.flip()
-
-
-    end_time = time.time()
-    elapsed_time = (end_time - start_time)
-    final_infected = 0
-    for sprite in all_people:
-        if sprite.infected == True:
-            final_infected += 1
-
-
-    print('There were '+str(final_infected-NUMBER_INFECTED_PERSONS)+ ' new infections for '+str(NUMBER_INFECTED_PERSONS)+' initial infected people in a total of '+str(NUMBER_PERSONS)+ ' people over '+str(round((elapsed_time/60),2)) +' minutes')
-    
-    
-    pygame.quit()
+        pygame.quit()
 
 
 if __name__=="__main__":
