@@ -40,6 +40,7 @@ MINUTES = int(input("How many minutes should the simulation run for?: "))
 HOW_MANY_RUNS = int(input("How many runs should the simulation run for?: "))
 MAX_TIME_IN_SHOP = 10
 MIN_TIME_IN_SHOP = 2
+INFECTION_THRESHOLD = 0.8
 SHOP_SIZE=HEIGHT/5
 
 
@@ -228,31 +229,31 @@ def check_infection(left, right):
     if left != right:
         distance = Vector2(left.rect.center).distance_to(right.rect.center)
         if distance < left.radius+INFECTION_DISTANCE:
-            if left.original_infected == True:
-                if left.selected_shop == right.selected_shop:
-                    right.infected = True
-                    if right.original_infected != True:
-                        right.image.fill(RED)
-                        right.infection_time = time.time()
-                        right_now = datetime.now()
-                        right.dt_string = right_now.strftime("%d/%m/%Y %H:%M:%S")
+            status = random.random()
+            if status < INFECTION_THRESHOLD:
+                if left.original_infected == True:
+                    if left.selected_shop == right.selected_shop:
+                        right.infected = True
+                        if right.original_infected != True:
+                            right.image.fill(RED)
+                            right.infection_time = time.time()
+                            right_now = datetime.now()
+                            right.dt_string = right_now.strftime("%d/%m/%Y %H:%M:%S")
 
 
         distance = Vector2(right.rect.center).distance_to(left.rect.center)
         if distance < left.radius+50:
-            if right.original_infected == True:
-                if left.selected_shop == right.selected_shop:
-                    left.infected = True
-                    if left.original_infected != True:
-                        left.image.fill(RED)
-                        left.infection_time = time.time()
-                        right_now = datetime.now()
-                        left.dt_string = right_now.strftime("%d/%m/%Y %H:%M:%S")
+            status = random.random()
+            if status < INFECTION_THRESHOLD:
+                if right.original_infected == True:
+                    if left.selected_shop == right.selected_shop:
+                        left.infected = True
+                        if left.original_infected != True:
+                            left.image.fill(RED)
+                            left.infection_time = time.time()
+                            right_now = datetime.now()
+                            left.dt_string = right_now.strftime("%d/%m/%Y %H:%M:%S")
 
-
-        return True
-    else:
-        return False
 
     
 def main():
@@ -341,8 +342,6 @@ def main():
             for shop in shops:
                 shop.drawself()
             all_people.draw(screen)
-            # for collided_sprite in collided_sprites:
-            #     collided_sprite
             pygame.display.flip()
 
 
