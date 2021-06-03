@@ -356,8 +356,8 @@ def main():
 
 
         # print('There were '+str(final_infected-NUMBER_INFECTED_PERSONS)+ ' new infections for '+str(NUMBER_INFECTED_PERSONS)+' initial infected people in a total of '+str(NUMBER_PERSONS)+ ' people over '+str(round((elapsed_time/60),2)) +' minutes')
-        data = [[final_infected-NUMBER_INFECTED_PERSONS, NUMBER_INFECTED_PERSONS, NUMBER_PERSONS, round((elapsed_time/60),2)]]
-        df = pd.DataFrame(data, columns = ['Number of New Infected', 'Number of original infected', 'Total number of people', 'Time elapsed'])
+        data = [[run_count, final_infected-NUMBER_INFECTED_PERSONS, NUMBER_INFECTED_PERSONS, NUMBER_PERSONS, round((elapsed_time/60),2)]]
+        df = pd.DataFrame(data, columns = ['Run ID', 'Number of New Infected', 'Number of original infected', 'Total number of people', 'Time elapsed'])
         if first_write_general:
             df.to_csv('general_data.csv')
             first_write_general = False
