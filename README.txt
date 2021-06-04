@@ -1,4 +1,4 @@
-Dependacies in python
+Dependencies in python
 
 The file requires that you pip install
 hashlib
