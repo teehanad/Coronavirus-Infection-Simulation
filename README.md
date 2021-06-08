@@ -1,11 +1,11 @@
 Dependacies in python
 
-The file requires that you pip install \\
-hashlib \\
-pygame \\
-termcolor \\
-pandas \\
-tqdm \\
+The file requires that you pip install <br />
+hashlib <br />
+pygame <br />
+termcolor <br />
+pandas <br />
+tqdm <br />
 
 To run the simulation run the coronasim.py file
 
